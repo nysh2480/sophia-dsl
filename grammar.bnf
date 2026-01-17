@@ -8,6 +8,12 @@
 		- Zero-Offset-Error: Range-based indexing
 		- Physicality: Array, I/O Gate, and Lens models
 		- Determinism: Side-effect-free expression via Pure Functions
+	
+	Update History:
+		v1.6.1: Universal IterSource (LValue + Literal + Range)
+		v1.6.4: I/O Gate Model ([?],[_],[<],[>]), Try-Flow (?!), Exit Controls
+		v1.6.5: Lens Selectors (]>[ |>[ [>[), Namespace SysCalls ($[sys...])
+		v1.6.6: Pure Functions (!) and Task (&) separation for guaranteed determinism.
 	========================================================= *)
 
 (* =========================================================
@@ -17,8 +23,8 @@
 <Program>		::= <Definition>*
 
 <Definition>	::= <SchemaDef> 
-				| <TaskDef>      (* 副作用あり & *)
-				| <PureDef>      (* 副作用なし ! *)
+				| <TaskDef>      (* 副作用あり: & *)
+				| <PureDef>      (* 副作用なし: ! *)
 				| <SceneDef> 
 				| <ConstDef>
 
@@ -27,6 +33,7 @@
 	========================================================= *)
 
 <SchemaDef>		::= "#" <Ident> <FieldsBlock> <CapacityBlock>?
+
 <FieldsBlock>	::= "[" <TypedFields> "]"
 <TypedFields>	::= <FieldDef> ( "," <FieldDef> )*
 <FieldDef>		::= <Ident> ":" <Type>
@@ -49,8 +56,13 @@
 	========================================================= *)
 
 <SceneDef>		::= "scene" <Ident> <LensSelector> "[" <EventDef>* "]"
-<LensSelector>	::= "]>[" | "|>[" | "[>["
+
+<LensSelector>	::= "]>["  (* Wide Lens: Global/Base Layer   *)
+				| "|>["  (* Normal Lens: Active/Main Layer *)
+				| "[>["  (* Tele Lens: Overlay/Sub Layer   *)
+
 <EventDef>		::= "on" <Ident> <ArgParamList>? <BodyBlock>
+
 <ArgParamList>	::= "[" ( "." <Ident> ( "," "." <Ident> )* )? "]"
 
 (* =========================================================
@@ -73,33 +85,52 @@
 				| <QAChain>
 				| <Action>
 				| <SapphireCall>
-				| <TaskCall>      (* Task execution name&[] *)
+				| <TaskCall>
 				| <ExitControl>
 
 (* --- QA CHAIN & TRY-FLOW --- *)
 <QAChain>		::= <QPrefix> <BodyBlock> ( <ElseIfBlock> | <ElseBlock> )?
-<QPrefix>		::= "?" "[" <Expression> "]" | "?!"
+
+<QPrefix>		::= "?" "[" <Expression> "]"         (* If: 条件評価 *)
+				| "?!"                               (* Try: 実行成否評価 *)
+
 <ElseIfBlock>	::= "|?" <QAChain>
-<ElseBlock>		::= "|!" ( "[" <Ident> "]" )? <BodyBlock>
+<ElseBlock>		::= "|!" ( "[" <Ident> "]" )? <BodyBlock> (* Catch/Else *)
 
 (* --- SAPPHIRE CALL & I/O GATES (Namespaces) --- *)
 <SapphireCall>	::= "$" "[" <Namespace> "." <Ident> <ArgList>? "]" <IOGate>?
+
 <Namespace>		::= "scene" | "event" | "audio" | "net" | "ui" | "sys" | "math" | "file"
+
 <IOGate>		::= "[" <IOParts> "]"
 <IOParts>		::= <IOPart> ( "," <IOPart> )*
-<IOPart>		::= "?" <Expression> | "_" <Expression> | "<" | ">" <Expression>? | "x"
+<IOPart>		::= "?" <Expression>                 (* 条件フィルタ (Status等) *)
+				| "_" <Expression>                 (* 待機時間 (Timeout) *)
+				| "<"                              (* Read (受信/同期化) *)
+				| ">" <Expression>?                (* Write (送信/イベント発火) *)
+				| "x"                              (* Abort (切断) *)
 
-(* --- EXIT CONTROL --- *)
+(* --- EXIT CONTROL (End-Cap & Out-Gate) --- *)
 <ExitControl>	::= <EndCap> | <OutGate>
-<EndCap>		::= "^" <Int>? | "v" | "x"
-<OutGate>		::= ">" <Expression>?
+
+<EndCap>		::= "^" <Int>?                       (* Continue/Retry (limit) *)
+				| "v"                                (* Pass/Next *)
+				| "x"                                (* Break/Terminate *)
+
+<OutGate>		::= ">" <Expression>?                (* Return/Output/Signal *)
 
 (* =========================================================
 	ITERATION & COLLECTION
 	========================================================= *)
 
 <IterateBlock>	::= <IterSource> "*" <BodyBlock>
-<IterSource>	::= <LValue> | <ListBlock> | <Int> | <Range> | "(" <Expression> ")"
+
+<IterSource>	::= <LValue>                         (* Array, Table, Variable *)
+				| <ListBlock>                        (* Array slice: arr@[0:10] *)
+				| <Int>                              (* N-times loop *)
+				| <Range>                            (* Range: start:end *)
+				| "(" <Expression> ")"               (* Expression result *)
+
 <Range>			::= <Expression> ":" <Expression>
 
 <CollectionBlock> ::= <Ident> "#" <Subject> <BodyBlock>?
@@ -113,23 +144,37 @@
 	========================================================= *)
 
 <LValue>		::= <Nature> <Ident> <SubAccess>*
-<SubAccess>		::= "::" <Ident> | "%" <Ident> | "#" <Expression>
+<SubAccess>		::= "::" <Ident>                     (* Property access *)
+				| "%" <Ident>                        (* Hash key access *)
+				| "#" <Expression>                   (* Table index access *)
+
 <Nature>		::= "#" | "%" | "@" | "$" | "&" | "." | "~"
+
+<DirectAccess>	::= <Accessor> <Ident>
+<Accessor>		::= "::" | "%" | "#"
 
 <TaskCall>		::= <Ident> "&" "[" <ArgList>? "]"
 <PureCall>		::= <Ident> "!" "[" <ArgList>? "]"
 <ArgList>		::= <Expression> ( "," <Expression> )*
 
+(* =========================================================
+	ACTIONS & OPERATIONS (演算・代入)
+	========================================================= *)
+
 <Action>		::= <LValue> "[" <GeoOp> <Expression>? "]"
-<GeoOp>			::= "<" | ">" | "x" | "+" | "-" | "*" | "/" | "%" | "^" | "v" | "_"
+				| <DirectAccess> "[" <GeoOp> <Expression>? "]"
+
+<GeoOp>			::= "<" | ">" | "x" | "+" | "-" | "*" | "/" | "%" 
+				| "^" | "v" | "_"
 
 (* =========================================================
-	EXPRESSIONS & LITERALS
+	EXPRESSIONS & LITERALS (式とリテラル)
 	========================================================= *)
 
 <Expression>	::= <LogicalOR>
 <LogicalOR>		::= <LogicalAND> ( "or" <LogicalAND> )*
 <LogicalAND>	::= <Comparison> ( "and" <Comparison> )*
+
 <Comparison>	::= <MathExpr> ( <CompOp> <MathExpr> )*
 <CompOp>		::= "eq" | "ne" | "gt" | "lt" | "ge" | "le"
 
@@ -138,11 +183,17 @@
 <Factor>		::= <Unary> | <Primary>
 <Unary>			::= ( "!" | "-" ) <Primary>
 
-<Primary>		::= <Literal> | <LValue> | <PureCall> | <SapphireCall> | "(" <Expression> ")"
+<Primary>		::= <Literal> 
+				| <LValue> 
+				| <DirectAccess> 
+				| <PureCall>      (* Expression内では ! のみを許可 *)
+				| <SapphireCall> 
+				| "(" <Expression> ")"
 
 <Literal>		::= <Int> | <Float> | <String> | <Bool>
 <Int>			::= [0-9]+
 <Float>			::= [0-9]+ "." [0-9]+
 <String>		::= "\"" [^"]* "\""
 <Bool>			::= "true" | "false"
+
 <Ident>			::= [a-zA-Z_][a-zA-Z0-9_]*
