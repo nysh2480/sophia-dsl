@@ -1,77 +1,84 @@
-# Sophia (AI₂O₃) - BNF Grammar Definition v1.6.5  
+# Sophia (AI₂O₃) - BNF Grammar Definition v1.6.6  
 (* =========================================================
-	Sophia (AI₂O₃) - BNF Grammar Definition v1.6.5
-	"The Camera & Lens Canon" - Integrated Full Version
+	Sophia (AI₂O³) - BNF Grammar Definition v1.6.6
+	"The Determinism Update"
 	
 	Philosophy:
-		- [cite_start]Auto-Iteration: Universal iteration source support [cite: 14]
-		- [cite_start]O(N) Enforcement: Nested loops forbidden (enforced by task calls) [cite: 14, 278]
-		- [cite_start]Zero-Offset-Error: Range-based indexing [cite: 14]
-		- [cite_start]Physicality: Array, I/O Gate, and Lens models [cite: 1, 278]
-		- [cite_start]Determinism: Predictable, side-effect-free execution [cite: 14]
+		- Auto-Iteration: Universal iteration source support
+		- O(N) Enforcement: Nested loops forbidden
+		- Zero-Offset-Error: Range-based indexing
+		- Physicality: Array, I/O Gate, and Lens models
+		- Determinism: Side-effect-free expression via Pure Functions
+	
+	Update History:
+		v1.6.1: Universal IterSource (LValue + Literal + Range)
+		v1.6.4: I/O Gate Model ([?],[_],[<],[>]), Try-Flow (?!), Exit Controls
+		v1.6.5: Lens Selectors (]>[ |>[ [>[), Namespace SysCalls ($[sys...])
+		v1.6.6: Pure Functions (!) and Task (&) separation for guaranteed determinism.
 	========================================================= *)
 
 (* =========================================================
 	PROGRAM STRUCTURE
 	========================================================= *)
 
-[cite_start]<Program>		::= <Definition>* [cite: 14, 278]
+<Program>		::= <Definition>*
 
 <Definition>	::= <SchemaDef> 
-				| <TaskDef> 
+				| <TaskDef>      (* 副作用あり: & *)
+				| <PureDef>      (* 副作用なし: ! *)
 				| <SceneDef> 
-				| [cite_start]<ConstDef> [cite: 15, 279]
+				| <ConstDef>
 
 (* =========================================================
 	SCHEMA DEFINITION (テーブル構造定義)
 	========================================================= *)
 
-[cite_start]<SchemaDef>		::= "#" <Ident> <FieldsBlock> <CapacityBlock>? [cite: 16, 280]
+<SchemaDef>		::= "#" <Ident> <FieldsBlock> <CapacityBlock>?
 
-[cite_start]<FieldsBlock>	::= "[" <TypedFields> "]" [cite: 16, 280]
-[cite_start]<TypedFields>	::= <FieldDef> ( "," <FieldDef> )* [cite: 16, 280]
-[cite_start]<FieldDef>		::= <Ident> ":" <Type> [cite: 16, 280]
+<FieldsBlock>	::= "[" <TypedFields> "]"
+<TypedFields>	::= <FieldDef> ( "," <FieldDef> )*
+<FieldDef>		::= <Ident> ":" <Type>
 
 <Type>			::= "i8" | "i16" | "i32" | "u8" | "u16" | "u32" 
-				| "f32" | "f64" | "str" | [cite_start]"bool" [cite: 16, 17, 281, 282]
+				| "f32" | "f64" | "str" | "bool"
 
-[cite_start]<CapacityBlock>	::= "[" ( <Int> | <Ident> ) "]" [cite: 18, 282]
+<CapacityBlock>	::= "[" ( <Int> | <Ident> ) "]"
 
 (* =========================================================
 	CONSTANT DEFINITION (ハッシュマップ型定数)
 	========================================================= *)
 
-[cite_start]<ConstDef>		::= "%" <Ident> "[" <HashList> "]" [cite: 19, 282]
-[cite_start]<HashList>		::= <HashPair> ( "," <HashPair> )* [cite: 19, 282]
-[cite_start]<HashPair>		::= <Ident> ( ":" <Expression> )? [cite: 19, 282]
+<ConstDef>		::= "%" <Ident> "[" <HashList> "]"
+<HashList>		::= <HashPair> ( "," <HashPair> )*
+<HashPair>		::= <Ident> ( ":" <Expression> )?
 
 (* =========================================================
-	SCENE DEFINITION (シーン・物理レンズモデル)
-	v1.6.5 "Camera & Lens Canon" update
+	SCENE DEFINITION (物理レンズモデル)
 	========================================================= *)
 
-[cite_start]<SceneDef>		::= "scene" <Ident> <LensSelector> "[" <EventDef>* "]" [cite: 283]
+<SceneDef>		::= "scene" <Ident> <LensSelector> "[" <EventDef>* "]"
 
 <LensSelector>	::= "]>["  (* Wide Lens: Global/Base Layer   *)
 				| "|>["  (* Normal Lens: Active/Main Layer *)
-				| [cite_start]"[>["  (* Tele Lens: Overlay/Sub Layer   *) [cite: 283, 284]
+				| "[>["  (* Tele Lens: Overlay/Sub Layer   *)
 
-<EventDef>		::= "on" <Ident> <ArgParamList>? [cite_start]<BodyBlock> [cite: 284, 285]
+<EventDef>		::= "on" <Ident> <ArgParamList>? <BodyBlock>
 
-<ArgParamList>	::= "[" ( "." <Ident> ( "," "." <Ident> )* )? [cite_start]"]" [cite: 285, 286]
+<ArgParamList>	::= "[" ( "." <Ident> ( "," "." <Ident> )* )? "]"
 
 (* =========================================================
-	TASK DEFINITION (関数定義)
+	TASK & PURE FUNCTION DEFINITION (タスクと純粋関数)
 	========================================================= *)
 
-<TaskDef>		::= "&" <Ident> "[" <ParamList>? [cite_start]"]" <BodyBlock> [cite: 19, 286, 287]
-[cite_start]<ParamList>		::= <Ident> ( "," <Ident> )* [cite: 19, 287]
+<TaskDef>		::= "&" <Ident> "[" <ParamList>? "]" <BodyBlock>
+<PureDef>		::= "!" <Ident> "[" <ParamList>? "]" <BodyBlock>
+<ParamList>		::= <Ident> ( "," <Ident> )*
 
 (* =========================================================
 	STATEMENTS & FLOW CONTROL (実行文と制御)
 	========================================================= *)
 
-<BodyBlock>		::= "[" <Statement>* <ExitControl>? [cite_start]"]" [cite: 1, 287, 288]
+<BodyBlock>		::= "[" <Statement>* <ExitControl>? "]"
 
 <Statement>		::= <IterateBlock>
 				| <CollectionBlock>
@@ -80,121 +87,114 @@
 				| <Action>
 				| <SapphireCall>
 				| <TaskCall>
-				| [cite_start]<ExitControl> [cite: 2, 288, 289]
+				| <ExitControl>
 
 (* --- QA CHAIN & TRY-FLOW --- *)
-[cite_start]<QAChain>		::= <QPrefix> <BodyBlock> ( <ElseIfBlock> | <ElseBlock> )? [cite: 2, 289]
+<QAChain>		::= <QPrefix> <BodyBlock> ( <ElseIfBlock> | <ElseBlock> )?
 
 <QPrefix>		::= "?" "[" <Expression> "]"         (* If: 条件評価 *)
-				| "?!"                               (* Try: 実行成否評価 *) [cite_start][cite: 3, 290]
+				| "?!"                               (* Try: 実行成否評価 *)
 
-<ElseIfBlock>	::= "|?" [cite_start]<QAChain> [cite: 290, 291]
-<ElseBlock>		::= "|!" ( "[" <Ident> "]" )? [cite_start]<BodyBlock> (* Catch/Else *) [cite: 4, 291]
+<ElseIfBlock>	::= "|?" <QAChain>
+<ElseBlock>		::= "|!" ( "[" <Ident> "]" )? <BodyBlock> (* Catch/Else *)
 
-(* --- SAPPHIRE CALL & I/O GATES (v1.6.5 Namespaces) --- *)
-<SapphireCall>	::= "$" "[" <Namespace> "." <Ident> <ArgList>? [cite_start]"]" <IOGate>? [cite: 291, 292]
+(* --- SAPPHIRE CALL & I/O GATES (Namespaces) --- *)
+<SapphireCall>	::= "$" "[" <Namespace> "." <Ident> <ArgList>? "]" <IOGate>?
 
-<Namespace>		::= "scene" | "event" | "audio" | "net" | "ui" | "sys" | "math" | [cite_start]"file" [cite: 292, 293]
+<Namespace>		::= "scene" | "event" | "audio" | "net" | "ui" | "sys" | "math" | "file"
 
-[cite_start]<IOGate>		::= "[" <IOParts> "]" [cite: 6, 293]
-[cite_start]<IOParts>		::= <IOPart> ( "," <IOPart> )* [cite: 6, 293]
+<IOGate>		::= "[" <IOParts> "]"
+<IOParts>		::= <IOPart> ( "," <IOPart> )*
 <IOPart>		::= "?" <Expression>                 (* 条件フィルタ (Status等) *)
 				| "_" <Expression>                 (* 待機時間 (Timeout) *)
 				| "<"                              (* Read (受信/同期化) *)
 				| ">" <Expression>?                (* Write (送信/イベント発火) *)
-				| [cite_start]"x"                              (* Abort (切断) *) [cite: 6, 8, 9, 10, 293, 294, 295]
+				| "x"                              (* Abort (切断) *)
 
 (* --- EXIT CONTROL (End-Cap & Out-Gate) --- *)
-<ExitControl>	::= <EndCap> | [cite_start]<OutGate> [cite: 10, 295, 296]
+<ExitControl>	::= <EndCap> | <OutGate>
 
 <EndCap>		::= "^" <Int>?                       (* Continue/Retry (limit) *)
 				| "v"                                (* Pass/Next *)
-				| [cite_start]"x"                                (* Break/Terminate *) [cite: 11, 296, 297]
+				| "x"                                (* Break/Terminate *)
 
-<OutGate>		::= ">" <Expression>?                (* Return/Output/Signal *) [cite_start][cite: 12, 297]
+<OutGate>		::= ">" <Expression>?                (* Return/Output/Signal *)
 
 (* =========================================================
-	ITERATION BLOCK (自動イテレーション)
+	ITERATION & COLLECTION
 	========================================================= *)
 
-[cite_start]<IterateBlock>	::= <IterSource> "*" <BodyBlock> [cite: 21, 297]
+<IterateBlock>	::= <IterSource> "*" <BodyBlock>
 
 <IterSource>	::= <LValue>                         (* Array, Table, Variable *)
 				| <ListBlock>                        (* Array slice: arr@[0:10] *)
 				| <Int>                              (* N-times loop *)
 				| <Range>                            (* Range: start:end *)
-				| [cite_start]"(" <Expression> ")"               (* Expression result *) [cite: 21, 22, 298, 299]
+				| "(" <Expression> ")"               (* Expression result *)
 
-[cite_start]<Range>			::= <Expression> ":" <Expression> [cite: 25, 299]
+<Range>			::= <Expression> ":" <Expression>
 
-(* =========================================================
-	COLLECTION BLOCK (テーブル操作)
-	========================================================= *)
+<CollectionBlock> ::= <Ident> "#" <Subject> <BodyBlock>?
+<Subject>		::= <Int> | <Ident> | "*"
 
-[cite_start]<CollectionBlock> ::= <Ident> "#" <Subject> <BodyBlock>? [cite: 27, 299]
-<Subject>		::= <Int> | <Ident> | [cite_start]"*" [cite: 28, 300]
-
-(* =========================================================
-	ARRAY GATE OPERATIONS (配列物理ゲート)
-	========================================================= *)
-
-<ListBlock>		::= <Ident> "@" "[" <Range>? <GateOp> <Expression>? [cite_start]"]" [cite: 30, 301]
-<GateOp>		::= "<" | ">" | "x" | "^" | "v" | [cite_start]"size" [cite: 31, 302]
+<ListBlock>		::= <Ident> "@" "[" <Range>? <GateOp> <Expression>? "]"
+<GateOp>		::= "<" | ">" | "x" | "^" | "v" | "size"
 
 (* =========================================================
-	LVALUE & ACCESSORS (左辺値とアクセス記法)
+	LVALUE & CALLS
 	========================================================= *)
 
-[cite_start]<LValue>		::= <Nature> <Ident> <SubAccess>* [cite: 33, 302]
+<LValue>		::= <Nature> <Ident> <SubAccess>*
 <SubAccess>		::= "::" <Ident>                     (* Property access *)
 				| "%" <Ident>                        (* Hash key access *)
-				| [cite_start]"#" <Expression>                   (* Table index access *) [cite: 33, 303]
+				| "#" <Expression>                   (* Table index access *)
 
-<Nature>		::= "#" | "%" | "@" | "$" | "&" | "." | [cite_start]"~" [cite: 35, 304]
+<Nature>		::= "#" | "%" | "@" | "$" | "&" | "." | "~"
 
-[cite_start]<DirectAccess>	::= <Accessor> <Ident> [cite: 33, 304]
-<Accessor>		::= "::" | "%" | [cite_start]"#" [cite: 305]
+<DirectAccess>	::= <Accessor> <Ident>
+<Accessor>		::= "::" | "%" | "#"
+
+<TaskCall>		::= <Ident> "&" "[" <ArgList>? "]"
+<PureCall>		::= <Ident> "!" "[" <ArgList>? "]"
+<ArgList>		::= <Expression> ( "," <Expression> )*
 
 (* =========================================================
 	ACTIONS & OPERATIONS (演算・代入)
 	========================================================= *)
 
 <Action>		::= <LValue> "[" <GeoOp> <Expression>? "]"
-				| <DirectAccess> "[" <GeoOp> <Expression>? [cite_start]"]" [cite: 224, 225, 306]
+				| <DirectAccess> "[" <GeoOp> <Expression>? "]"
 
 <GeoOp>			::= "<" | ">" | "x" | "+" | "-" | "*" | "/" | "%" 
-				| "^" | "v" | [cite_start]"_" [cite: 226, 227, 306, 307]
-
-(* =========================================================
-	TASK CALL (タスク呼び出し)
-	========================================================= *)
-
-<TaskCall>		::= <TaskTarget> "&" "[" <ArgList>? [cite_start]"]" [cite: 230, 308]
-[cite_start]<TaskTarget>	::= <LValue> [cite: 230, 308]
-[cite_start]<ArgList>		::= <Expression> ( "," <Expression> )* [cite: 230, 308]
+				| "^" | "v" | "_"
 
 (* =========================================================
 	EXPRESSIONS & LITERALS (式とリテラル)
 	========================================================= *)
 
-[cite_start]<Expression>	::= <LogicalOR> [cite: 309]
-[cite_start]<LogicalOR>		::= <LogicalAND> ( "or" <LogicalAND> )* [cite: 309]
-[cite_start]<LogicalAND>	::= <Comparison> ( "and" <Comparison> )* [cite: 309]
+<Expression>	::= <LogicalOR>
+<LogicalOR>		::= <LogicalAND> ( "or" <LogicalAND> )*
+<LogicalAND>	::= <Comparison> ( "and" <Comparison> )*
 
-[cite_start]<Comparison>	::= <MathExpr> ( <CompOp> <MathExpr> )* [cite: 309]
-<CompOp>		::= "eq" | "ne" | "gt" | "lt" | "ge" | [cite_start]"le" [cite: 310]
+<Comparison>	::= <MathExpr> ( <CompOp> <MathExpr> )*
+<CompOp>		::= "eq" | "ne" | "gt" | "lt" | "ge" | "le"
 
-[cite_start]<MathExpr>		::= <Term> ( ( "+" | "-" ) <Term> )* [cite: 310]
-[cite_start]<Term>			::= <Factor> ( ( "*" | "/" | "%" ) <Factor> )* [cite: 310]
-<Factor>		::= <Unary> | [cite_start]<Primary> [cite: 310]
-[cite_start]<Unary>			::= ( "!" | "-" ) <Primary> [cite: 311]
+<MathExpr>		::= <Term> ( ( "+" | "-" ) <Term> )*
+<Term>			::= <Factor> ( ( "*" | "/" | "%" ) <Factor> )*
+<Factor>		::= <Unary> | <Primary>
+<Unary>			::= ( "!" | "-" ) <Primary>
 
-<Primary>		::= <Literal> | <LValue> | <DirectAccess> | <SapphireCall> | <TaskCall> | [cite_start]"(" <Expression> ")" [cite: 311, 312]
+<Primary>		::= <Literal> 
+				| <LValue> 
+				| <DirectAccess> 
+				| <PureCall>      (* Expression内では ! のみを許可 *)
+				| <SapphireCall> 
+				| "(" <Expression> ")"
 
-<Literal>		::= <Int> | <Float> | <String> | [cite_start]<Bool> [cite: 312]
-[cite_start]<Int>			::= [0-9]+ [cite: 236, 312]
-<Float>			::= [0-9]+ "." [cite_start][0-9]+ [cite: 236, 312]
-[cite_start]<String>		::= "\"" [^"]* "\"" [cite: 236, 312]
-<Bool>			::= "true" | [cite_start]"false" [cite: 236, 312]
+<Literal>		::= <Int> | <Float> | <String> | <Bool>
+<Int>			::= [0-9]+
+<Float>			::= [0-9]+ "." [0-9]+
+<String>		::= "\"" [^"]* "\""
+<Bool>			::= "true" | "false"
 
-[cite_start]<Ident>			::= [a-zA-Z_][a-zA-Z0-9_]* [cite: 236, 312]
+<Ident>			::= [a-zA-Z_][a-zA-Z0-9_]*
