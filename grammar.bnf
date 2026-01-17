@@ -197,3 +197,31 @@
 <Bool>			::= "true" | [cite_start]"false" [cite: 236, 312]
 
 [cite_start]<Ident>			::= [a-zA-Z_][a-zA-Z0-9_]* [cite: 236, 312]
+
+(* =========================================================
+	TASK & PURE FUNCTION DEFINITION
+	========================================================= *)
+
+<Definition>	::= <SchemaDef> 
+				| <TaskDef>      (* 副作用あり: & *)
+				| <PureDef>      (* 副作用なし: ! *)
+				| <SceneDef> 
+				| <ConstDef>
+
+<TaskDef>		::= "&" <Ident> "[" <ParamList>? "]" <BodyBlock>
+<PureDef>		::= "!" <Ident> "[" <ParamList>? "]" <BodyBlock>
+
+(* =========================================================
+	CALL SYNTAX
+	========================================================= *)
+
+<TaskCall>		::= <Ident> "&" "[" <ArgList>? "]"
+<PureCall>		::= <Ident> "!" "[" <ArgList>? "]"
+
+(* Expression 内では <PureCall> のみを許可し、副作用を排除する *)
+<Primary>		::= <Literal> 
+				| <LValue> 
+				| <DirectAccess> 
+				| <PureCall> 
+				| <SapphireCall> 
+				| "(" <Expression> ")"
